@@ -160,7 +160,7 @@
         }
         textarea {
             resize: vertical;
-            min-height: 130px;
+            min-height: 180px;
             font-size: 0.95rem;
             line-height: 1.5;
             background-color: #f8f9fa;
@@ -182,7 +182,6 @@
 
 <div class="container">
     <div class="header-title">
-        <!-- 優先讀取韓國原廠 SVG Logo，若無法載入則自動顯示內建 SVG 備援 -->
         <img class="kia-logo" src="https://www.kia.com/etc.clientlibs/kwp-global/clientlibs/clientlib-site/resources/images/common/logo_w.svg" alt="KIA Logo" onerror="this.onerror=null; this.outerHTML='<svg class=\'kia-logo\' viewBox=\'0 0 132 32\' xmlns=\'http://www.w3.org/2000/svg\'><path fill=\'#ffffff\' d=\'M32.5 0 L15.7 18.9 L0 18.9 L0 0 L7.4 0 L7.4 11.8 L18.9 0 L32.5 0 Z M15.7 18.9 L32.5 32 L19.7 32 L7.4 20.2 L7.4 32 L0 32 L0 18.9 L15.7 18.9 Z M45.8 0 L53.2 0 L53.2 32 L45.8 32 L45.8 0 Z M93.3 0 L76.5 18.9 L68.8 18.9 L68.8 0 L61.4 0 L61.4 32 L68.8 32 L68.8 18.9 L84.5 32 L99.2 32 L82.4 18.9 L93.3 0 Z\'/></svg>';">
         <h2>隔熱紙下單小幫手</h2>
     </div>
@@ -221,7 +220,11 @@
             </div>
             <div class="form-group">
                 <label for="location">存放(施工)地點 (必填)</label>
-                <input type="text" id="location" placeholder="例如：霖亞新宜蘭廠" oninput="updateNote()">
+                <input type="text" id="location" placeholder="例如：新美中和廠" oninput="updateNote()">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="otherInfo">其他 (選填，例如交車日、補充事項)</label>
+                <input type="text" id="otherInfo" placeholder="例如：預計 10/25 交車、請留廢料" oninput="updateNote()">
             </div>
         </div>
     </div>
@@ -725,50 +728,74 @@ function updateNote() {
     const carColor = document.getElementById('carColor').value;
     const agent = document.getElementById('agent').value;
     const location = document.getElementById('location').value;
+    const otherInfo = document.getElementById('otherInfo').value;
 
+    // 前擋文字
     const frontBrand = document.getElementById('front-brand').value;
     const frontSeries = cleanSeriesName(document.getElementById('front-series').value);
     const frontVlt = document.getElementById('front-vlt').value;
-    const frontStr = (frontBrand && frontSeries) ? `${frontBrand} ${frontSeries}${frontVlt ? '-' + frontVlt : ''}` : '';
+    let frontStr = '';
+    if (frontBrand && frontSeries) {
+        frontStr = `前擋：${frontBrand} ${frontSeries}${frontVlt ? '-' + frontVlt : ''}`;
+    }
 
+    // 車身文字
     const bodyBrand = document.getElementById('body-brand').value;
     const bodySeries = cleanSeriesName(document.getElementById('body-series').value);
     const vltFront = document.getElementById('body-vlt-front').value;
     const vltRear = document.getElementById('body-vlt-rear').value;
     const vltBack = document.getElementById('body-vlt-back').value;
 
-    let bodyPartsText = '';
+    let bodyStr = '';
     if (bodyBrand && bodySeries) {
+        const modelName = `${bodyBrand} ${bodySeries}`;
         if (vltFront && vltFront === vltRear && vltRear === vltBack) {
-            bodyPartsText = `車身：${bodyBrand} ${bodySeries}-${vltFront}`;
+            bodyStr = `車身：${modelName}-${vltFront}`;
         } else {
             let parts = [];
-            if (vltFront) parts.push(`車身(前窗)：${bodyBrand} ${bodySeries}-${vltFront}`);
-            if (vltRear) parts.push(`車身(後窗)：${bodyBrand} ${bodySeries}-${vltRear}`);
-            if (vltBack) parts.push(`車身(後擋)：${bodyBrand} ${bodySeries}-${vltBack}`);
+            if (vltFront) parts.push(`前窗 ${modelName}-${vltFront}`);
+            if (vltRear) parts.push(`後窗 ${modelName}-${vltRear}`);
+            if (vltBack) parts.push(`後擋 ${modelName}-${vltBack}`);
             
             if (parts.length > 0) {
-                bodyPartsText = parts.join(' / ');
+                bodyStr = `車身：${parts.join('、')}`;
             } else {
-                bodyPartsText = `車身：${bodyBrand} ${bodySeries}`;
+                bodyStr = `車身：${modelName}`;
             }
         }
     }
 
+    // 天窗文字
     const sunroofBrand = document.getElementById('sunroof-brand').value;
     const sunroofSeries = cleanSeriesName(document.getElementById('sunroof-series').value);
     const sunroofVlt = document.getElementById('sunroof-vlt').value;
-    const sunroofStr = (sunroofBrand && sunroofSeries) ? `${sunroofBrand} ${sunroofSeries}${sunroofVlt ? '-' + sunroofVlt : ''}` : '';
+    let sunroofStr = '';
+    if (sunroofBrand && sunroofSeries) {
+        sunroofStr = `天窗：${sunroofBrand} ${sunroofSeries}${sunroofVlt ? '-' + sunroofVlt : ''}`;
+    }
 
     let tintLines = [];
-    if (frontStr) tintLines.push(`前擋：${frontStr}`);
-    if (bodyPartsText) tintLines.push(bodyPartsText);
-    if (sunroofStr) tintLines.push(`天窗：${sunroofStr}`);
+    if (frontStr) tintLines.push(frontStr);
+    if (bodyStr) tintLines.push(bodyStr);
+    if (sunroofStr) tintLines.push(sunroofStr);
 
-    const tintCombined = tintLines.join(' / ');
+    const tintCombined = tintLines.join('\n');
 
-    const noteText = `車身碼：${vin}\n車型：${carModel}\n車色：${carColor}\n業代：${agent}\n存放(施工)地點：${location}\n${tintCombined}`;
-    document.getElementById('finalNote').value = noteText;
+    let lines = [
+        `車身碼：${vin}`,
+        `車型：${carModel}`,
+        `車色：${carColor}`,
+        `業代：${agent}`,
+        `存放(施工)地點：${location}`
+    ];
+
+    if (tintCombined) {
+        lines.push(tintCombined);
+    }
+
+    lines.push(`其他：${otherInfo}`);
+
+    document.getElementById('finalNote').value = lines.join('\n');
 }
 
 function copyText(elementId) {
