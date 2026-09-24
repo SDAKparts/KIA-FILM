@@ -178,12 +178,12 @@
         <div class="section-title">1. 基本車輛資訊</div>
         <div class="form-grid">
             <div class="form-group">
-                <label for="vin">車身碼 (需為17碼英數字)</label>
+                <label for="vin">車身碼 (必填，需為17碼英數字)</label>
                 <input type="text" id="vin" class="uppercase-input" placeholder="請輸入17碼車身碼" maxlength="17" oninput="onVinInput()">
                 <div class="alert" id="vin-alert">⚠️ 車身碼需為17碼半形英數字 (已自動過濾空格與符號)</div>
             </div>
             <div class="form-group">
-                <label for="carModel">車型 (請選擇)</label>
+                <label for="carModel">車型 (必選)</label>
                 <select id="carModel" onchange="onCarModelChange()">
                     <option value="">-- 請選擇車型 --</option>
                     <option value="JA - Picanto">JA - Picanto</option>
@@ -198,16 +198,16 @@
                 <div class="car-hint">選擇車型後，下方件號規格會自動連動比對</div>
             </div>
             <div class="form-group">
-                <label for="carColor">車色</label>
+                <label for="carColor">車色 (選填)</label>
                 <input type="text" id="carColor" placeholder="例如：極光白" oninput="updateNote()">
             </div>
             <div class="form-group">
-                <label for="agent">業代</label>
+                <label for="agent">業代 (必填)</label>
                 <input type="text" id="agent" placeholder="例如：張小明" oninput="updateNote()">
             </div>
             <div class="form-group">
-                <label for="location">存放(施工)地點</label>
-                <input type="text" id="location" placeholder="例如：新美中和廠" oninput="updateNote()">
+                <label for="location">存放(施工)地點 (必填)</label>
+                <input type="text" id="location" placeholder="例如：霖亞新宜蘭廠" oninput="updateNote()">
             </div>
         </div>
     </div>
@@ -242,7 +242,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>透光度(法規70以上)</label>
+                    <label>透光度(法規70)</label>
                     <select id="front-vlt" onchange="updateNote()">
                         <option value="">-- 請先選規格 --</option>
                     </select>
@@ -287,7 +287,7 @@
             <label style="margin-top: 6px; display: block; color: var(--primary);">車身各位置透光度：</label>
             <div class="vlt-subgrid">
                 <div class="form-group">
-                    <label>前窗 (法規40以上)</label>
+                    <label>前窗 (法規40)</label>
                     <select id="body-vlt-front" onchange="updateNote()">
                         <option value="">-- 請先選規格 --</option>
                     </select>
@@ -513,8 +513,6 @@ function checkModelMatch(userCarModel, item) {
 
 function onVinInput() {
     const vinInput = document.getElementById('vin');
-    
-    // 只保留半形英文字母與數字，並自動轉換為大寫
     let cleanedValue = vinInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     vinInput.value = cleanedValue;
     
@@ -760,6 +758,71 @@ function updateNote() {
 }
 
 function copyText(elementId) {
+    // 複製一鍵備註按鈕時，執行完整防呆驗證
+    if (elementId === 'finalNote') {
+        let missingFields = [];
+
+        // 1. 檢查基本車輛資訊
+        const vin = document.getElementById('vin').value.trim();
+        const carModel = document.getElementById('carModel').value;
+        const agent = document.getElementById('agent').value.trim();
+        const location = document.getElementById('location').value.trim();
+
+        if (!vin || vin.length !== 17) {
+            missingFields.push('車身碼 (需為正確17碼)');
+        }
+        if (!carModel) {
+            missingFields.push('車型');
+        }
+        if (!agent) {
+            missingFields.push('業代');
+        }
+        if (!location) {
+            missingFields.push('存放(施工)地點');
+        }
+
+        // 2. 檢查隔熱紙選擇 (前擋、車身、天窗 至少擇一完成)
+        const frontBrand = document.getElementById('front-brand').value;
+        const frontSeries = document.getElementById('front-series').value;
+        const frontVlt = document.getElementById('front-vlt').value;
+        const isFrontComplete = frontBrand && frontSeries && frontVlt;
+
+        const bodyBrand = document.getElementById('body-brand').value;
+        const bodySeries = document.getElementById('body-series').value;
+        const bodyVltFront = document.getElementById('body-vlt-front').value;
+        const bodyVltRear = document.getElementById('body-vlt-rear').value;
+        const bodyVltBack = document.getElementById('body-vlt-back').value;
+        const isBodySelected = bodyBrand || bodySeries || bodyVltFront || bodyVltRear || bodyVltBack;
+        const isBodyComplete = bodyBrand && bodySeries && bodyVltFront && bodyVltRear && bodyVltBack;
+
+        const sunroofBrand = document.getElementById('sunroof-brand').value;
+        const sunroofSeries = document.getElementById('sunroof-series').value;
+        const sunroofVlt = document.getElementById('sunroof-vlt').value;
+        const isSunroofComplete = sunroofBrand && sunroofSeries && sunroofVlt;
+
+        // 至少選擇一項隔熱紙
+        if (!isFrontComplete && !isBodySelected && !isSunroofComplete) {
+            missingFields.push('隔熱紙型號 (【前擋】、【車身】、【天窗】至少需完成一項設定)');
+        } else {
+            // 如果有選【車身】，必須檢查前窗、後窗、後擋是否都有選透光度
+            if (isBodySelected && !isBodyComplete) {
+                let bodyMissing = [];
+                if (!bodyBrand) bodyMissing.push('品牌');
+                if (!bodySeries) bodyMissing.push('系列');
+                if (!bodyVltFront) bodyMissing.push('前窗透光度');
+                if (!bodyVltRear) bodyMissing.push('後窗透光度');
+                if (!bodyVltBack) bodyMissing.push('後擋透光度');
+                missingFields.push(`【車身】設定未完備 (尚缺: ${bodyMissing.join('、')})`);
+            }
+        }
+
+        // 若有未填項目，跳出警示並阻止複製
+        if (missingFields.length > 0) {
+            alert('⚠️ 無法複製系統備註！請先完成以下必要欄位：\n\n' + missingFields.map((f, i) => `${i + 1}. ${f}`).join('\n'));
+            return;
+        }
+    }
+
     const elem = document.getElementById(elementId);
     let textToCopy = (elem.tagName === 'TEXTAREA' || elem.tagName === 'INPUT') ? elem.value : elem.textContent;
 
@@ -792,3 +855,4 @@ updateNote();
 
 </body>
 </html>
+    
