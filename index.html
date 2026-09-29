@@ -19,7 +19,7 @@
         .btn-copy:hover { background: #0a2d5c; }
         .btn-large { width: 100%; padding: 14px; font-size: 1.1em; font-weight: bold; margin-top: 10px; border-radius: 8px; }
         .vlt-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 5px; }
-        #loading { text-align: center; font-size: 1.2em; color: #051C3F; padding: 50px 0; }
+        #loading { text-align: center; font-size: 1.2em; color: #051C3F; padding: 50px 0; line-height: 1.6; }
         #main-content { display: none; }
     </style>
 </head>
@@ -172,7 +172,7 @@
     let carTypes = [];
     let products = [];
 
-    // 精準 CSV 解析引擎：可完美處理含有雙引號、雙引號內有逗號的 Excel 格式
+    // 精準 Excel CSV 欄位解析器
     function parseExcelCSV(text) {
         let lines = [];
         let row = [""];
@@ -203,22 +203,28 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        // 加入時間戳記避免 GitHub Pages 快取舊 CSV 檔案
+        const cacheBuster = `?v=${Date.now()}`;
+        
         Promise.all([
-            fetch('cartypes.csv').then(res => res.text()),
-            fetch('database.csv').then(res => res.text())
-        ])
-        .then(([carCsv, dbCsv]) => {
-            // 解析車型對照表
-            let carData = parseExcelCSV(carCsv);
-            for (let i = 1; i < carData.length; i++) {
-                let row = carData[i];
-if (row && row[0]) carTypes.push({ code: row[0].trim(), name: row[1] ? row[1].trim() : "" });
+            fetch('cartypes.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 cartypes.csv'); return res.text(); }),
+fetch('database.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 database.csv'); return res.text(); })
+])
+.then(([carCsv, dbCsv]) => {
+// 1. 解析車型
+let carData = parseExcelCSV(carCsv);
+for (let i = 1; i < carData.length; i++) {
+let row = carData[i];
+if (row && row[0]) {
+carTypes.push({ code: row[0].trim(), name: row[1] ? row[1].trim() : "" });
 }
-// 解析主要隔熱紙資料庫 (品牌, 件號, 品名, 車型/規格, 位置, 系列, 透光度)
+}
+// 2. 解析隔熱紙資料庫 (修正 Bug 點)
 let dbData = parseExcelCSV(dbCsv);
 for (let i = 1; i < dbData.length; i++) {
 let row = dbData[i];
-if (row && row.length >= 7) {
+if (row && row.length >= 7 && row[0].trim()) {
+// 修正：必須針對 row[3] (車型) 與 row[6] (透光度) 分割，而不是對整個 row
 let carsArr = row[3].split(',').map(c => c.trim()).filter(c => c);
 let vltArr = row[6].split(',').map(v => v.trim()).filter(v => v);
 products.push({
@@ -232,12 +238,16 @@ vlt: vltArr
 });
 }
 }
+if(carTypes.length === 0 || products.length === 0) {
+throw new Error('CSV 檔案解析出來的資料為空，請檢查 CSV 第一列標頭名稱是否正確。');
+}
 initApp();
 document.getElementById('loading').style.display = 'none';
 document.getElementById('main-content').style.display = 'block';
 })
 .catch(error => {
-document.getElementById('loading').innerText = ❌ 讀取失敗。請確認同資料夾下是否有 cartypes.csv 與 database.csv。;
+// 錯誤防呆提示畫面
+document.getElementById('loading').innerHTML = <div style="color: #d9534f; font-weight: bold; text-align: left; max-width: 500px; margin: 0 auto;"> ❌ 系統載入失敗，原因如下：<br> <span style="color: #333; font-weight: normal; font-size: 0.9em; display:block; margin-top: 10px; background: #fff5f5; padding: 10px; border: 1px solid #ffcccc; border-radius: 4px;"> ${error.message}<br><br> 請確認您的 <b>cartypes.csv</b> 與 <b>database.csv</b> 已經成功上傳到 GitHub，且檔名大小寫完全一致。 </span> </div>;
 console.error(error);
 });
 });
@@ -261,6 +271,7 @@ brandSelect.appendChild(opt);
 });
 });
 setupEventListeners();
+updateSummary();
 }
 function setupEventListeners() {
 document.getElementById('vin').addEventListener('input', function() {
