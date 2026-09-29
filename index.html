@@ -172,15 +172,14 @@
     let carTypes = [];
     let products = [];
 
-    // 精準 Excel CSV 欄位解析器
     function parseExcelCSV(text) {
         let lines = [];
         let row = [""];
         let inQuotes = false;
 
         for (let i = 0; i < text.length; i++) {
-            let c = text[i];
-            let next = text[i+1];
+            let c = text.charAt(i);
+            let next = text.charAt(i + 1);
 
             if (c === '"') {
                 if (inQuotes && next === '"') { 
@@ -198,33 +197,32 @@
                 row[row.length - 1] += c;
             }
         }
-        if (row.length > 1 || row[0] !== "") lines.push(row);
+        if (row.length > 1 || row !== "") lines.push(row);
         return lines;
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        // 加入時間戳記避免 GitHub Pages 快取舊 CSV 檔案
-        const cacheBuster = `?v=${Date.now()}`;
+        const cacheBuster = "?v=" + Date.now();
         
         Promise.all([
-            fetch('cartypes.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 cartypes.csv'); return res.text(); }),
-fetch('database.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 database.csv'); return res.text(); })
-])
+            fetch('cartypes.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 cartypes.csv 檔案'); return res.text(); }),
+            fetch('database.csv' + cacheBuster).then(res => { if(!res.ok) throw new Error('找不到 database.csv 檔案'); return res.text(); })
+        ])
 .then(([carCsv, dbCsv]) => {
-// 1. 解析車型
 let carData = parseExcelCSV(carCsv);
 for (let i = 1; i < carData.length; i++) {
 let row = carData[i];
 if (row && row[0]) {
-carTypes.push({ code: row[0].trim(), name: row[1] ? row[1].trim() : "" });
+carTypes.push({
+code: row[0].trim(),
+name: row[1] ? row[1].trim() : ""
+});
 }
 }
-// 2. 解析隔熱紙資料庫 (修正 Bug 點)
 let dbData = parseExcelCSV(dbCsv);
 for (let i = 1; i < dbData.length; i++) {
 let row = dbData[i];
-if (row && row.length >= 7 && row[0].trim()) {
-// 修正：必須針對 row[3] (車型) 與 row[6] (透光度) 分割，而不是對整個 row
+if (row && row.length >= 7 && row[0].trim() !== "") {
 let carsArr = row[3].split(',').map(c => c.trim()).filter(c => c);
 let vltArr = row[6].split(',').map(v => v.trim()).filter(v => v);
 products.push({
@@ -239,15 +237,14 @@ vlt: vltArr
 }
 }
 if(carTypes.length === 0 || products.length === 0) {
-throw new Error('CSV 檔案解析出來的資料為空，請檢查 CSV 第一列標頭名稱是否正確。');
+throw new Error('CSV 檔案解析結果為空，請檢查 Excel 表格欄位順序。');
 }
 initApp();
 document.getElementById('loading').style.display = 'none';
 document.getElementById('main-content').style.display = 'block';
 })
 .catch(error => {
-// 錯誤防呆提示畫面
-document.getElementById('loading').innerHTML = <div style="color: #d9534f; font-weight: bold; text-align: left; max-width: 500px; margin: 0 auto;"> ❌ 系統載入失敗，原因如下：<br> <span style="color: #333; font-weight: normal; font-size: 0.9em; display:block; margin-top: 10px; background: #fff5f5; padding: 10px; border: 1px solid #ffcccc; border-radius: 4px;"> ${error.message}<br><br> 請確認您的 <b>cartypes.csv</b> 與 <b>database.csv</b> 已經成功上傳到 GitHub，且檔名大小寫完全一致。 </span> </div>;
+document.getElementById('loading').innerHTML = <div style="color: #d9534f; font-weight: bold; text-align: left; max-width: 500px; margin: 0 auto;"> ❌ 系統資料庫載入失敗：<br> <span style="color: #333; font-weight: normal; font-size: 0.9em; display:block; margin-top: 10px; background: #fff5f5; padding: 10px; border: 1px solid #ffcccc; border-radius: 4px;"> ${error.message}<br><br> 請確認 <b>cartypes.csv</b> 與 <b>database.csv</b> 是否已成功上傳到 GitHub，且與 index.html 放在同一個資料夾。 </span> </div>;
 console.error(error);
 });
 });
@@ -256,7 +253,7 @@ const carSelect = document.getElementById('car-type');
 carTypes.forEach(car => {
 let opt = document.createElement('option');
 opt.value = car.code;
-opt.textContent = ${car.code} - ${car.name};
+opt.textContent = car.code + " - " + car.name;
 carSelect.appendChild(opt);
 });
 ['前檔', '車身', '天窗'].forEach(pos => {
@@ -302,12 +299,12 @@ el.addEventListener('change', () => { checkAllCompatibility(); updateSummary(); 
 }
 function handleBrandChange(pos, brand) {
 const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
-const seriesSel = document.getElementById(${prefix}-series);
-seriesSel.innerHTML = brand ? '-- 請選擇系列 --' : <option value="">-- 請先選品牌 --</option>;
+const seriesSel = document.getElementById(prefix + "-series");
+seriesSel.innerHTML = brand ? '-- 請選擇系列 --' : '-- 請先選品牌 --';
 seriesSel.disabled = !brand;
 resetVltFields(pos);
-document.getElementById(${prefix}-partno).textContent = '---';
-document.getElementById(${prefix}-match-warning).style.display = 'none';
+document.getElementById(prefix + "-partno").textContent = '---';
+document.getElementById(prefix + "-match-warning").style.display = 'none';
 if (!brand) { updateSummary(); return; }
 const seriesList = [...new Set(products.filter(p => p.brand === brand && (p.position.includes(pos) || pos.includes(p.position))).map(p => p.series))];
 seriesList.forEach(s => {
@@ -322,30 +319,30 @@ function handleSeriesChange(pos, brand, series) {
 const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
 resetVltFields(pos, series);
 if (!series) {
-document.getElementById(${prefix}-partno).textContent = '---';
-document.getElementById(${prefix}-match-warning).style.display = 'none';
+document.getElementById(prefix + "-partno").textContent = '---';
+document.getElementById(prefix + "-match-warning").style.display = 'none';
 updateSummary();
 return;
 }
 const prod = products.find(p => p.brand === brand && p.series === series && (p.position.includes(pos) || pos.includes(p.position)));
 if (prod) {
-document.getElementById(${prefix}-partno).textContent = prod.id;
+document.getElementById(prefix + "-partno").textContent = prod.id;
 if (pos === '車身') {
 ['b-vlt-front', 'b-vlt-back', 'b-vlt-rear'].forEach(id => {
 const el = document.getElementById(id);
 prod.vlt.forEach(v => {
 let opt = document.createElement('option');
 opt.value = v;
-opt.textContent = ${v}%;
+opt.textContent = v + "%";
 el.appendChild(opt);
 });
 });
 } else {
-const el = document.getElementById(${prefix}-vlt);
+const el = document.getElementById(prefix + "-vlt");
 prod.vlt.forEach(v => {
 let opt = document.createElement('option');
 opt.value = v;
-opt.textContent = ${v}%;
+opt.textContent = v + "%";
 el.appendChild(opt);
 });
 }
@@ -358,13 +355,13 @@ const text = hasSeries ? '-- 請選擇透光度 --' : '-- 請先選系列 --';
 if (pos === '車身') {
 ['b-vlt-front', 'b-vlt-back', 'b-vlt-rear'].forEach(id => {
 const el = document.getElementById(id);
-el.innerHTML = <option value="">${text}</option>;
+el.innerHTML = '' + text + '';
 el.disabled = !hasSeries;
 });
 } else {
 const prefix = pos === '前檔' ? 'f' : 's';
-const el = document.getElementById(${prefix}-vlt);
-el.innerHTML = <option value="">${text}</option>;
+const el = document.getElementById(prefix + "-vlt");
+el.innerHTML = '' + text + '';
 el.disabled = !hasSeries;
 }
 }
@@ -372,9 +369,9 @@ function checkAllCompatibility() {
 const currentCar = document.getElementById('car-type').value;
 ['前檔', '車身', '天窗'].forEach(pos => {
 const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
-const brand = document.getElementById(${prefix}-brand).value;
-const series = document.getElementById(${prefix}-series).value;
-const warningEl = document.getElementById(${prefix}-match-warning);
+const brand = document.getElementById(prefix + "-brand").value;
+const series = document.getElementById(prefix + "-series").value;
+const warningEl = document.getElementById(prefix + "-match-warning");
 if (!brand || !series || !currentCar) {
 warningEl.style.display = 'none';
 return;
@@ -407,18 +404,18 @@ const sBrand = document.getElementById('s-brand').value;
 const sSeries = document.getElementById('s-series').value;
 const sVlt = document.getElementById('s-vlt').value;
 const sPart = document.getElementById('s-partno').innerText;
-let summary = 【車身號碼】:${vin}\n;
-summary += 【車型規格】:${carType} ${carColor ? '(' + carColor + ')' : ''}\n;
-summary += 【營業人員】:${salesman}\n;
-summary += 【施工地點】:${location}\n;
-summary += 【前擋規格】:${fBrand && fSeries && fVlt ? ${fBrand} ${fSeries} (透光:${fVlt}%) [件號:${fPart}] : '未選擇'}\n;
+let summary = "【車身號碼】:" + vin + "\n";
+summary += "【車型規格】:" + carType + (carColor ? ' (' + carColor + ')' : '') + "\n";
+summary += "【營業人員】:" + salesman + "\n";
+summary += "【施工地點】:" + location + "\n";
+summary += "【前擋規格】:" + (fBrand && fSeries && fVlt ? (fBrand + " " + fSeries + " (透光:" + fVlt + "%) [件號:" + fPart + "]") : '未選擇') + "\n";
 let bodyText = '未選擇';
 if (bBrand && bSeries && bVltF && bVltB && bVltR) {
-bodyText = ${bBrand} ${bSeries} (前窗:${bVltF}% / 後窗:${bVltB}% / 後擋:${bVltR}%) [件號:${bPart}];
+bodyText = bBrand + " " + bSeries + " (前窗:" + bVltF + "% / 後窗:" + bVltB + "% / 後擋:" + bVltR + "%) [件號:" + bPart + "]";
 }
-summary += 【車身規格】:${bodyText}\n;
-summary += 【天窗規格】:${sBrand && sSeries && sVlt ? ${sBrand} ${sSeries} (透光:${sVlt}%) [件號:${sPart}] : '無天窗/未選'}\n;
-summary += 【其他備註】:${memo ? memo : '無'};
+summary += "【車身規格】:" + bodyText + "\n";
+summary += "【天窗規格】:" + (sBrand && sSeries && sVlt ? (sBrand + " " + sSeries + " (透光:" + sVlt + "%) [件號:" + sPart + "]") : '無天窗/未選') + "\n";
+summary += "【其他備註】:" + (memo ? memo : '無');
 document.getElementById('output-summary').value = summary;
 }
 function copyText(elementId, isTextArea = false) {
