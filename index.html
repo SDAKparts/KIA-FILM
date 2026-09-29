@@ -1,453 +1,892 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KIA 隔熱紙下單小幫手</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 700px; background: #fff; margin: 0 auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { border-bottom: 2px solid #051C3F; padding-bottom: 10px; color: #051C3F; margin-top: 0; }
-        .section { margin-bottom: 25px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa; }
-        .section-title { font-weight: bold; font-size: 1.1em; color: #051C3F; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.95em; }
-        input[type="text"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
-        .warning { color: #d9534f; font-size: 0.85em; font-weight: bold; margin-top: 5px; display: none; }
-        .part-number-box { background: #eef2f7; padding: 10px; border-radius: 6px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 1.05em; font-weight: bold; }
-        .btn-copy { background: #051C3F; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; transition: 0.2s; }
-        .btn-copy:hover { background: #0a2d5c; }
-        .btn-large { width: 100%; padding: 14px; font-size: 1.1em; font-weight: bold; margin-top: 10px; border-radius: 8px; }
-        .vlt-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 5px; }
-        #loading { text-align: center; font-size: 1.2em; color: #051C3F; padding: 50px 0; line-height: 1.6; }
-        #main-content { display: none; }
+        :root {
+            --primary: #0056b3;
+            --success: #28a745;
+            --warning: #dc3545;
+            --bg: #050505;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 16px 12px;
+            color: #333;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .kia-logo {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+        h2 {
+            text-align: center;
+            color: #ffffff;
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+        .section {
+            border: 1px solid #e1e4e8;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            background: #ffffff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: bold;
+            margin-bottom: 14px;
+            color: #050505;
+            border-bottom: 2.5px solid var(--primary);
+            padding-bottom: 4px;
+            display: inline-block;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        input, select, textarea {
+            padding: 9px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0,86,179,0.25);
+        }
+        .part-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .part-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .part-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .vlt-subgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px dashed #ced4da;
+            margin-top: 6px;
+        }
+        .part-number-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #eef2f7;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+        .part-number-text {
+            font-family: monospace;
+            font-weight: bold;
+            color: #d63384;
+            flex-grow: 1;
+            word-break: break-all;
+            font-size: 1rem;
+        }
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #004085; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #218838; }
+        .alert {
+            color: var(--warning);
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 6px;
+            display: none;
+            background: #fdf2f2;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #f8b4b4;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 180px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            background-color: #f8f9fa;
+        }
+        .btn-copy-main {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .car-hint {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="loading">📡 正在從 CSV 讀取系統資料庫，請稍候...</div>
+    <div class="header-title">
+        <img class="kia-logo" src="https://www.kia.com/etc.clientlibs/kwp-global/clientlibs/clientlib-site/resources/images/common/logo_w.svg" alt="KIA Logo" onerror="this.onerror=null; this.outerHTML='<svg class=\'kia-logo\' viewBox=\'0 0 132 32\' xmlns=\'http://www.w3.org/2000/svg\'><path fill=\'#ffffff\' d=\'M32.5 0 L15.7 18.9 L0 18.9 L0 0 L7.4 0 L7.4 11.8 L18.9 0 L32.5 0 Z M15.7 18.9 L32.5 32 L19.7 32 L7.4 20.2 L7.4 32 L0 32 L0 18.9 L15.7 18.9 Z M45.8 0 L53.2 0 L53.2 32 L45.8 32 L45.8 0 Z M93.3 0 L76.5 18.9 L68.8 18.9 L68.8 0 L61.4 0 L61.4 32 L68.8 32 L68.8 18.9 L84.5 32 L99.2 32 L82.4 18.9 L93.3 0 Z\'/></svg>';">
+        <h2>隔熱紙下單小幫手</h2>
+    </div>
 
-    <div id="main-content">
-        <h2>🚗 KIA 隔熱紙下單小幫手</h2>
-
-        <!-- 1. 基本車輛資訊 -->
-        <div class="section">
-            <div class="section-title">1. 基本車輛資訊</div>
+    <!-- 基本資料區塊 -->
+    <div class="section">
+        <div class="section-title">1. 基本車輛資訊</div>
+        <div class="form-grid">
             <div class="form-group">
                 <label for="vin">車身碼 (必填，需為17碼英數字)</label>
-                <input type="text" id="vin" placeholder="請輸入17碼車身碼" maxlength="17">
-                <div id="vin-warning" class="warning">⚠ 車身碼需為17碼半形英數字 (已自動過濾空格與符號)</div>
+                <input type="text" id="vin" class="uppercase-input" placeholder="請輸入17碼車身碼" maxlength="17" oninput="onVinInput()">
+                <div class="alert" id="vin-alert">⚠️ 車身碼需為17碼半形英數字 (已自動過濾空格與符號)</div>
             </div>
             <div class="form-group">
-                <label for="car-type">車型 (必選)</label>
-                <select id="car-type">
+                <label for="carModel">車型 (必選)</label>
+                <select id="carModel" onchange="onCarModelChange()">
                     <option value="">-- 請選擇車型 --</option>
+                    <option value="JA - Picanto">JA - Picanto</option>
+                    <option value="YB - Stonic">YB - Stonic</option>
+                    <option value="CD SW - Ceed Sportswagon">CD SW - Ceed Sportswagon</option>
+                    <option value="NQ5 - Sportage">NQ5 - Sportage</option>
+                    <option value="MQ4 - Sorento">MQ4 - Sorento</option>
+                    <option value="KA4 - Carnival">KA4 - Carnival</option>
+                    <option value="CV - EV6">CV - EV6</option>
+                    <option value="MV - EV9">MV - EV9</option>
                 </select>
-                <div class="warning" style="display:block; color:#666; font-weight:normal;">選擇車型後，下方件號規格會自動連動比對</div>
+                <div class="car-hint">選擇車型後，下方件號規格會自動連動比對</div>
             </div>
             <div class="form-group">
-                <label for="car-color">車色 (選填)</label>
-                <input type="text" id="car-color" placeholder="例如：星鑽銀">
+                <label for="carColor">車色 (選填)</label>
+                <input type="text" id="carColor" placeholder="例如：極光白" oninput="updateNote()">
             </div>
             <div class="form-group">
-                <label for="salesman">業代 (必填)</label>
-                <input type="text" id="salesman" placeholder="請輸入業代姓名">
+                <label for="agent">業代 (必填)</label>
+                <input type="text" id="agent" placeholder="例如：張小明" oninput="updateNote()">
             </div>
             <div class="form-group">
                 <label for="location">存放(施工)地點 (必填)</label>
-                <input type="text" id="location" placeholder="例如：內湖廠">
+                <input type="text" id="location" placeholder="例如：新美中和廠" oninput="updateNote()">
             </div>
-            <div class="form-group">
-                <label for="memo">其他 (選填，例如交車日、補充事項)</label>
-                <textarea id="memo" rows="2" placeholder="請輸入備註事項"></textarea>
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="otherInfo">其他 (選填，例如交車日、補充事項)</label>
+                <input type="text" id="otherInfo" placeholder="例如：預計 10/25 交車、請留廢料" oninput="updateNote()">
             </div>
         </div>
+    </div>
 
-        <!-- 2. 前擋隔熱紙 -->
-        <div class="section" id="sec-front">
-            <div class="section-title">2. 隔熱紙型號選擇 【前擋】</div>
-            <div class="form-group">
-                <label>品牌</label>
-                <select class="brand-select" data-pos="前檔" id="f-brand">
-                    <option value="">-- 請選擇品牌 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>系列</label>
-                <select class="series-select" data-pos="前檔" id="f-series" disabled>
-                    <option value="">-- 請先選品牌 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>透光度 (建議法規70以上)</label>
-                <select class="vlt-select" data-pos="前檔" id="f-vlt" disabled>
-                    <option value="">-- 請先選系列 --</option>
-                </select>
-            </div>
-            <div class="part-number-box">
-                <span>件號：<span id="f-partno">---</span></span>
-                <button class="btn-copy" onclick="copyText('f-partno')">複製件號</button>
-            </div>
-            <div id="f-match-warning" class="warning">⚠ 警告：所選件號適用車型與您選擇的車型不符！</div>
-        </div>
-
-        <!-- 3. 車身隔熱紙 -->
-        <div class="section" id="sec-body">
-            <div class="section-title">3. 隔熱紙型號選擇 【車身】</div>
-            <div class="form-group">
-                <label>品牌</label>
-                <select class="brand-select" data-pos="車身" id="b-brand">
-                    <option value="">-- 請選擇品牌 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>系列</label>
-                <select class="series-select" data-pos="車身" id="b-series" disabled>
-                    <option value="">-- 請先選品牌 --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>車身各位置透光度：(建議法規40以上)</label>
-                <div class="vlt-group">
-                    <div>
-                        <label style="font-size:0.85em; color:#555;">前窗</label>
-                        <select class="vlt-select-multi" data-pos="車身" id="b-vlt-front" disabled><option value="">-- 請先選系列 --</option></select>
-                    </div>
-                    <div>
-                        <label style="font-size:0.85em; color:#555;">後窗</label>
-                        <select class="vlt-select-multi" data-pos="車身" id="b-vlt-back" disabled><option value="">-- 請先選系列 --</option></select>
-                    </div>
-                    <div>
-                        <label style="font-size:0.85em; color:#555;">後擋</label>
-                        <select class="vlt-select-multi" data-pos="車身" id="b-vlt-rear" disabled><option value="">-- 請先選系列 --</option></select>
-                    </div>
+    <!-- 隔熱紙選擇區塊 -->
+    <div class="section">
+        <div class="section-title">2. 隔熱紙型號選擇</div>
+        
+        <!-- 前擋 -->
+        <div class="part-block">
+            <div class="part-title">【前擋】</div>
+            <div class="part-grid">
+                <div class="form-group">
+                    <label>品牌</label>
+                    <select id="front-brand" onchange="onBrandChange('front')">
+                        <option value="">-- 請選擇品牌 --</option>
+                        <option value="FSK">FSK</option>
+                        <option value="3M">3M</option>
+                        <option value="Smith">Smith</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>系列</label>
+                    <select id="front-series" onchange="onSeriesChange('front')">
+                        <option value="">-- 請先選品牌 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>適用車型規格</label>
+                    <select id="front-spec" onchange="onSpecChange('front')">
+                        <option value="">-- 請先選系列 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>透光度 (法規70以上)</label>
+                    <select id="front-vlt" onchange="updateNote()">
+                        <option value="">-- 請先選規格 --</option>
+                    </select>
                 </div>
             </div>
             <div class="part-number-box">
-                <span>件號：<span id="b-partno">---</span></span>
-                <button class="btn-copy" onclick="copyText('b-partno')">複製件號</button>
+                <span>件號：</span>
+                <span class="part-number-text" id="front-partno">---</span>
+                <button class="btn" onclick="copyText('front-partno')">複製件號</button>
             </div>
-            <div id="b-match-warning" class="warning">⚠ 警告：所選件號適用車型與您選擇的車型不符！</div>
+            <div class="alert" id="front-alert">⚠️ 警告：所選件號適用車型與您選擇的車型不符！</div>
         </div>
 
-        <!-- 4. 天窗隔熱紙 -->
-        <div class="section" id="sec-sunroof">
-            <div class="section-title">4. 隔熱紙型號選擇 【天窗】(若無可不選)</div>
-            <div class="form-group">
-                <label>品牌</label>
-                <select class="brand-select" data-pos="天窗" id="s-brand">
-                    <option value="">-- 不指定 / 無天窗 --</option>
-                </select>
+        <!-- 車身 (分為前窗、後窗、後擋) -->
+        <div class="part-block">
+            <div class="part-title">【車身】</div>
+            <div class="part-grid">
+                <div class="form-group">
+                    <label>品牌</label>
+                    <select id="body-brand" onchange="onBrandChange('body')">
+                        <option value="">-- 請選擇品牌 --</option>
+                        <option value="FSK">FSK</option>
+                        <option value="3M">3M</option>
+                        <option value="Smith">Smith</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>系列</label>
+                    <select id="body-series" onchange="onSeriesChange('body')">
+                        <option value="">-- 請先選品牌 --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>適用車型規格</label>
+                    <select id="body-spec" onchange="onSpecChange('body')">
+                        <option value="">-- 請先選系列 --</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label>系列</label>
-                <select class="series-select" data-pos="天窗" id="s-series" disabled>
-                    <option value="">-- 請先選品牌 --</option>
-                </select>
+
+            <!-- 車身透光度 3 個子選單 -->
+            <label style="margin-top: 6px; display: block; color: var(--primary);">車身各位置透光度：</label>
+            <div class="vlt-subgrid">
+                <div class="form-group">
+                    <label>前窗 (法規40以上)</label>
+                    <select id="body-vlt-front" onchange="updateNote()">
+                        <option value="">-- 請先選規格 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>後窗</label>
+                    <select id="body-vlt-rear" onchange="updateNote()">
+                        <option value="">-- 請先選規格 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>後擋</label>
+                    <select id="body-vlt-back" onchange="updateNote()">
+                        <option value="">-- 請先選規格 --</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label>透光度</label>
-                <select class="vlt-select" data-pos="天窗" id="s-vlt" disabled>
-                    <option value="">-- 請先選系列 --</option>
-                </select>
+
+            <div class="part-number-box">
+                <span>件號：</span>
+                <span class="part-number-text" id="body-partno">---</span>
+                <button class="btn" onclick="copyText('body-partno')">複製件號</button>
+            </div>
+            <div class="alert" id="body-alert">⚠️ 警告：所選件號適用車型與您選擇的車型不符！</div>
+        </div>
+
+        <!-- 天窗 (可選) -->
+        <div class="part-block">
+            <div class="part-title">【天窗】(若無可不選)</div>
+            <div class="part-grid">
+                <div class="form-group">
+                    <label>品牌</label>
+                    <select id="sunroof-brand" onchange="onBrandChange('sunroof')">
+                        <option value="">-- 不指定 / 無天窗 --</option>
+                        <option value="FSK">FSK</option>
+                        <option value="3M">3M</option>
+                        <option value="Smith">Smith</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>系列</label>
+                    <select id="sunroof-series" onchange="onSeriesChange('sunroof')">
+                        <option value="">-- 請先選品牌 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>適用車型規格</label>
+                    <select id="sunroof-spec" onchange="onSpecChange('sunroof')">
+                        <option value="">-- 請先選系列 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>透光度</label>
+                    <select id="sunroof-vlt" onchange="updateNote()">
+                        <option value="">-- 請先選規格 --</option>
+                    </select>
+                </div>
             </div>
             <div class="part-number-box">
-                <span>件號：<span id="s-partno">---</span></span>
-                <button class="btn-copy" onclick="copyText('s-partno')">複製件號</button>
+                <span>件號：</span>
+                <span class="part-number-text" id="sunroof-partno">---</span>
+                <button class="btn" onclick="copyText('sunroof-partno')">複製件號</button>
             </div>
-            <div id="s-match-warning" class="warning">⚠ 警告：所選件號適用車型與您選擇的車型不符！</div>
+            <div class="alert" id="sunroof-alert">⚠️ 警告：所選件號適用車型與您選擇的車型不符！</div>
         </div>
+    </div>
 
-        <!-- 5. 系統備註欄位複製區 -->
-        <div class="section">
-            <div class="section-title">5. 系統備註欄位複製區</div>
-            <textarea id="output-summary" rows="6" readonly placeholder="請填妥上方資訊，此處將自動動態生成系統備註文字..."></textarea>
-            <button class="btn-copy btn-large" onclick="copyText('output-summary', true)">一鍵複製系統備註文字</button>
-        </div>
+    <!-- 系統備註匯出區塊 -->
+    <div class="section">
+        <div class="section-title">3. 系統備註欄位複製區</div>
+        <textarea id="finalNote" readonly></textarea>
+        <button class="btn btn-success btn-copy-main" onclick="copyText('finalNote')">一鍵複製系統備註文字</button>
     </div>
 </div>
 
 <script>
-    window.onerror = function(msg, url, line) {
-        showError("網頁執行出錯（第 " + line + " 行）：" + msg);
-        return false;
-    };
+const DATABASE = [
+  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["78"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["68"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["78"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["68"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["78"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["68"]},
+  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["78"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["20", "40"]},
+  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["68"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["8", "18", "38", "68"]},
+  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75", "50", "35", "25", "10"]},
+  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["15", "45", "75"]},
+  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["75"]},
+  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["15", "45", "75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["70", "80", "90"]},
+  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["70"]},
+  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
+  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70", "80", "90"]},
+  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["70"]},
+  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["75"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["70", "80", "90"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["70"]},
+  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["75"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["70", "80", "90"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
+  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["18", "35", "40", "70"]},
+  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
+  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70", "80", "90"]},
+  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40", "70", "80", "90"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYMQT422", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYMQT420", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYMQT426", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYMQT222", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYMQT220", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYMQT226", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYMQT122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYMQT120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYMQT126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYKAT422", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYKAT420", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYKAT426", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYKAT222", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYKAT220", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYKAT226", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYKAT122", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYKAT120", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYKAT126", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120CDCK", "raw_cars": "CD, CK", "cars": ["CD", "CK"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122CDCK", "raw_cars": "CD, CK", "cars": ["CD", "CK"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYCDT222", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYCDT220", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYCDT122", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYCDT120", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSMT1120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSMT1122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYSMT1126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYSMT1126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYSMT4126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYSMT4126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSMT2120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSMT2122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYSMT2126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYSMT2126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["10", "20", "35", "45", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSM210A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSM212A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSM010A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSM012A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSMYB210A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["05", "15", "30", "40", "50", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSMYB212A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["70"]},
+  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSMYB0A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["05", "15", "30", "40", "70"]},
+  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSMYB2A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["70"]}
+];
 
-    let carTypes = [];
-    let products = [];
+const PART_TYPES_MAP = { "front": "前擋", "body": "車身", "sunroof": "天窗" };
 
-    function parseExcelCSV(text) {
-        let lines = [];
-        let row = [""];
-        let inQuotes = false;
+function cleanSeriesName(name) {
+    return name ? name.replace(/系列$/g, '') : '';
+}
 
-        for (let i = 0; i < text.length; i++) {
-            let c = text.charAt(i);
-            let next = text.charAt(i + 1);
+function checkModelMatch(userCarModel, item) {
+    if (!userCarModel) return true;
+    const userCode = userCarModel.split(' ')[0].toUpperCase();
+    if (item.cars.some(c => c.toUpperCase() === userCode)) return true;
+    if (item.raw_cars.toUpperCase().includes(userCode)) return true;
+    if (userCode === 'CD' && item.raw_cars.toUpperCase().includes('SW')) return true;
+    return false;
+}
 
-            if (c === '"') {
-                if (inQuotes && next === '"') { 
-                    row[row.length - 1] += '"'; i++; 
-                } else { 
-                    inQuotes = !inQuotes; 
-                }
-            } else if (c === ',' && !inQuotes) {
-                row.push("");
-            } else if ((c === '\r' || c === '\n') && !inQuotes) {
-                if (c === '\r' && next === '\n') { i++; }
-                lines.push(row);
-                row = [""];
-            } else {
-                row[row.length - 1] += c;
-            }
-        }
-        if (row.length > 1 || (row.length === 1 && row[0] !== "")) lines.push(row);
-        return lines;
+function onVinInput() {
+    const vinInput = document.getElementById('vin');
+    let cleanedValue = vinInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    vinInput.value = cleanedValue;
+    
+    const vinAlert = document.getElementById('vin-alert');
+    if (cleanedValue.length > 0 && cleanedValue.length !== 17) {
+        vinAlert.style.display = 'block';
+    } else {
+        vinAlert.style.display = 'none';
+    }
+    
+    updateNote();
+}
+
+function onBrandChange(partKey) {
+    const brand = document.getElementById(`${partKey}-brand`).value;
+    const seriesSelect = document.getElementById(`${partKey}-series`);
+    const specSelect = document.getElementById(`${partKey}-spec`);
+    const partType = PART_TYPES_MAP[partKey];
+
+    seriesSelect.innerHTML = '<option value="">-- 請選擇系列 --</option>';
+    specSelect.innerHTML = '<option value="">-- 請先選系列 --</option>';
+
+    clearVltSelects(partKey);
+
+    if (brand) {
+        const seriesList = [...new Set(
+            DATABASE
+                .filter(item => item.brand === brand && item.part_type === partType)
+                .map(item => item.series)
+        )];
+
+        seriesList.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = cleanSeriesName(s);
+            seriesSelect.appendChild(opt);
+        });
     }
 
-    function loadFile(filename, callback) {
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET", filename + "?v=" + Date.now(), true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
+    updatePartInfo(partKey);
+}
 
-if (xhr.status === 200) {
-callback(null, xhr.responseText);
-} else {
-callback("無法讀取 " + filename + " (狀態碼: " + xhr.status + ")", null);
+function clearVltSelects(partKey) {
+    if (partKey === 'body') {
+        ['body-vlt-front', 'body-vlt-rear', 'body-vlt-back'].forEach(id => {
+            document.getElementById(id).innerHTML = '<option value="">-- 請先選規格 --</option>';
+        });
+    } else {
+        document.getElementById(`${partKey}-vlt`).innerHTML = '<option value="">-- 請先選規格 --</option>';
+    }
 }
+
+function onSeriesChange(partKey) {
+    const brand = document.getElementById(`${partKey}-brand`).value;
+    const series = document.getElementById(`${partKey}-series`).value;
+    const specSelect = document.getElementById(`${partKey}-spec`);
+    const partType = PART_TYPES_MAP[partKey];
+    const userCarModel = document.getElementById('carModel').value;
+
+    specSelect.innerHTML = '<option value="">-- 請選擇適用車型 --</option>';
+    clearVltSelects(partKey);
+
+    if (brand && series) {
+        const matches = DATABASE.filter(item => item.brand === brand && item.part_type === partType && item.series === series);
+
+        let autoMatchedIndex = -1;
+
+        matches.forEach((item, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.textContent = `適用車型: ${item.raw_cars} (件號: ${item.part_no})`;
+            specSelect.appendChild(opt);
+
+            if (userCarModel && autoMatchedIndex === -1) {
+                if (checkModelMatch(userCarModel, item)) {
+                    autoMatchedIndex = idx;
+                }
+            }
+        });
+
+        if (autoMatchedIndex !== -1) {
+            specSelect.value = autoMatchedIndex;
+        } else if (matches.length > 0) {
+            specSelect.value = 0;
+        }
+
+        onSpecChange(partKey);
+    } else {
+        updatePartInfo(partKey);
+    }
 }
-};
-xhr.send();
+
+function onSpecChange(partKey) {
+    const brand = document.getElementById(`${partKey}-brand`).value;
+    const series = document.getElementById(`${partKey}-series`).value;
+    const specIndex = document.getElementById(`${partKey}-spec`).value;
+    const partType = PART_TYPES_MAP[partKey];
+
+    clearVltSelects(partKey);
+
+    if (brand && series && specIndex !== "") {
+        const matches = DATABASE.filter(item => item.brand === brand && item.part_type === partType && item.series === series);
+        const selectedItem = matches[specIndex];
+
+        if (selectedItem) {
+            const allVlts = selectedItem.vlts.map(v => v.replace('%', '')).sort((a,b) => parseInt(a) - parseInt(b));
+
+            if (partKey === 'body') {
+                const frontVltSelect = document.getElementById('body-vlt-front');
+                frontVltSelect.innerHTML = '<option value="">-- 請選擇 --</option>';
+                const frontVlts = allVlts.filter(v => parseInt(v) >= 38);
+                const validFrontVlts = frontVlts.length > 0 ? frontVlts : allVlts;
+                validFrontVlts.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = v;
+                    frontVltSelect.appendChild(opt);
+                });
+
+                ['body-vlt-rear', 'body-vlt-back'].forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '<option value="">-- 請選擇 --</option>';
+                    allVlts.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = v;
+                        select.appendChild(opt);
+                    });
+                });
+            } else {
+                const select = document.getElementById(`${partKey}-vlt`);
+                select.innerHTML = '<option value="">-- 請選擇 --</option>';
+                allVlts.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = v;
+                    select.appendChild(opt);
+                });
+            }
+        }
+    }
+
+    updatePartInfo(partKey);
 }
-function showError(msg) {
-document.getElementById('loading').innerHTML = <div style="color: #d9534f; font-weight: bold; text-align: left; max-width: 500px; margin: 0 auto; background: #fff5f5; padding: 15px; border: 1px solid #ffcccc; border-radius: 8px;"> ❌ 系統載入失敗：<br> <span style="color: #333; font-weight: normal; font-size: 0.9em; display:block; margin-top: 10px;"> ${msg}<br><br> 請確認 <b>cartypes.csv</b> 與 <b>database.csv</b> 是否已成功上傳到 GitHub 的根目錄。 </span> </div>;
+
+function onCarModelChange() {
+    ['front', 'body', 'sunroof'].forEach(p => {
+        const brand = document.getElementById(`${p}-brand`).value;
+        const series = document.getElementById(`${p}-series`).value;
+        if (brand && series) {
+            onSeriesChange(p);
+        } else {
+            updatePartInfo(p);
+        }
+    });
+    updateNote();
 }
-document.addEventListener("DOMContentLoaded", () => {
-loadFile('cartypes.csv', function(err1, carCsv) {
-if (err1) { showError(err1); return; }
-loadFile('database.csv', function(err2, dbCsv) {
-if (err2) { showError(err2); return; }
-try {
-// 1. 解析車型
-let carData = parseExcelCSV(carCsv);
-for (let i = 1; i < carData.length; i++) {
-let row = carData[i];
-if (row && row.length >= 2) {
-carTypes.push({ code: row[0].trim(), name: row[1].trim() });
+
+function updatePartInfo(partKey) {
+    const brand = document.getElementById(`${partKey}-brand`).value;
+    const series = document.getElementById(`${partKey}-series`).value;
+    const specIndex = document.getElementById(`${partKey}-spec`).value;
+    const partNoElem = document.getElementById(`${partKey}-partno`);
+    const alertElem = document.getElementById(`${partKey}-alert`);
+    const partType = PART_TYPES_MAP[partKey];
+    const userCarModel = document.getElementById('carModel').value;
+
+    if (brand && series && specIndex !== "") {
+        const matches = DATABASE.filter(item => item.brand === brand && item.part_type === partType && item.series === series);
+        const selectedItem = matches[specIndex];
+
+        if (selectedItem) {
+            partNoElem.textContent = selectedItem.part_no;
+
+            if (userCarModel) {
+                const isMatch = checkModelMatch(userCarModel, selectedItem);
+                alertElem.style.display = isMatch ? 'none' : 'block';
+            } else {
+                alertElem.style.display = 'none';
+            }
+        } else {
+            partNoElem.textContent = '---';
+            alertElem.style.display = 'none';
+        }
+    } else {
+        partNoElem.textContent = '---';
+        alertElem.style.display = 'none';
+    }
+
+    updateNote();
 }
+
+function updateNote() {
+    const vin = document.getElementById('vin').value.trim().toUpperCase();
+    const carModel = document.getElementById('carModel').value;
+    const carColor = document.getElementById('carColor').value;
+    const agent = document.getElementById('agent').value;
+    const location = document.getElementById('location').value;
+    const otherInfo = document.getElementById('otherInfo').value;
+
+    // 前擋文字
+    const frontBrand = document.getElementById('front-brand').value;
+    const frontSeries = cleanSeriesName(document.getElementById('front-series').value);
+    const frontVlt = document.getElementById('front-vlt').value;
+    let frontStr = '';
+    if (frontBrand && frontSeries) {
+        frontStr = `前擋：${frontBrand} ${frontSeries}${frontVlt ? '-' + frontVlt : ''}`;
+    }
+
+    // 車身文字
+    const bodyBrand = document.getElementById('body-brand').value;
+    const bodySeries = cleanSeriesName(document.getElementById('body-series').value);
+    const vltFront = document.getElementById('body-vlt-front').value;
+    const vltRear = document.getElementById('body-vlt-rear').value;
+    const vltBack = document.getElementById('body-vlt-back').value;
+
+    let bodyStr = '';
+    if (bodyBrand && bodySeries) {
+        const modelName = `${bodyBrand} ${bodySeries}`;
+        if (vltFront && vltFront === vltRear && vltRear === vltBack) {
+            bodyStr = `車身：${modelName}-${vltFront}`;
+        } else {
+            let parts = [];
+            if (vltFront) parts.push(`前窗 ${modelName}-${vltFront}`);
+            if (vltRear) parts.push(`後窗 ${modelName}-${vltRear}`);
+            if (vltBack) parts.push(`後擋 ${modelName}-${vltBack}`);
+            
+            if (parts.length > 0) {
+                bodyStr = `車身：${parts.join('、')}`;
+            } else {
+                bodyStr = `車身：${modelName}`;
+            }
+        }
+    }
+
+    // 天窗文字
+    const sunroofBrand = document.getElementById('sunroof-brand').value;
+    const sunroofSeries = cleanSeriesName(document.getElementById('sunroof-series').value);
+    const sunroofVlt = document.getElementById('sunroof-vlt').value;
+    let sunroofStr = '';
+    if (sunroofBrand && sunroofSeries) {
+        sunroofStr = `天窗：${sunroofBrand} ${sunroofSeries}${sunroofVlt ? '-' + sunroofVlt : ''}`;
+    }
+
+    let tintLines = [];
+    if (frontStr) tintLines.push(frontStr);
+    if (bodyStr) tintLines.push(bodyStr);
+    if (sunroofStr) tintLines.push(sunroofStr);
+
+    const tintCombined = tintLines.join('\n');
+
+    let lines = [
+        `車身碼：${vin}`,
+        `車型：${carModel}`,
+        `車色：${carColor}`,
+        `業代：${agent}`,
+        `存放(施工)地點：${location}`
+    ];
+
+    if (tintCombined) {
+        lines.push(tintCombined);
+    }
+
+    lines.push(`其他：${otherInfo}`);
+
+    document.getElementById('finalNote').value = lines.join('\n');
 }
-// 2. 解析隔熱紙資料
-let dbData = parseExcelCSV(dbCsv);
-for (let i = 1; i < dbData.length; i++) {
-let row = dbData[i];
-if (row && row.length >= 7 && row[0].trim() !== "") {
-let carsArr = row[3].split(',').map(c => c.trim()).filter(c => c);
-let vltArr = row[6].split(',').map(v => v.trim()).filter(v => v);
-products.push({
-brand: row[0].trim(),
-id: row[1].trim(),
-name: row[2].trim(),
-cars: carsArr,
-position: row[4].trim(),
-series: row[5].trim(),
-vlt: vltArr
-});
+
+function copyText(elementId) {
+    if (elementId === 'finalNote') {
+        let missingFields = [];
+
+        const vin = document.getElementById('vin').value.trim();
+        const carModel = document.getElementById('carModel').value;
+        const agent = document.getElementById('agent').value.trim();
+        const location = document.getElementById('location').value.trim();
+
+        if (!vin || vin.length !== 17) {
+            missingFields.push('車身碼 (需為正確17碼)');
+        }
+        if (!carModel) {
+            missingFields.push('車型');
+        }
+        if (!agent) {
+            missingFields.push('業代');
+        }
+        if (!location) {
+            missingFields.push('存放(施工)地點');
+        }
+
+        const frontBrand = document.getElementById('front-brand').value;
+        const frontSeries = document.getElementById('front-series').value;
+        const frontVlt = document.getElementById('front-vlt').value;
+        const isFrontComplete = frontBrand && frontSeries && frontVlt;
+
+        const bodyBrand = document.getElementById('body-brand').value;
+        const bodySeries = document.getElementById('body-series').value;
+        const bodyVltFront = document.getElementById('body-vlt-front').value;
+        const bodyVltRear = document.getElementById('body-vlt-rear').value;
+        const bodyVltBack = document.getElementById('body-vlt-back').value;
+        const isBodySelected = bodyBrand || bodySeries || bodyVltFront || bodyVltRear || bodyVltBack;
+        const isBodyComplete = bodyBrand && bodySeries && bodyVltFront && bodyVltRear && bodyVltBack;
+
+        const sunroofBrand = document.getElementById('sunroof-brand').value;
+        const sunroofSeries = document.getElementById('sunroof-series').value;
+        const sunroofVlt = document.getElementById('sunroof-vlt').value;
+        const isSunroofComplete = sunroofBrand && sunroofSeries && sunroofVlt;
+
+        if (!isFrontComplete && !isBodySelected && !isSunroofComplete) {
+            missingFields.push('隔熱紙型號 (【前擋】、【車身】、【天窗】至少需完成一項設定)');
+        } else {
+            if (isBodySelected && !isBodyComplete) {
+                let bodyMissing = [];
+                if (!bodyBrand) bodyMissing.push('品牌');
+                if (!bodySeries) bodyMissing.push('系列');
+                if (!bodyVltFront) bodyMissing.push('前窗透光度');
+                if (!bodyVltRear) bodyMissing.push('後窗透光度');
+                if (!bodyVltBack) bodyMissing.push('後擋透光度');
+                missingFields.push(`【車身】設定未完備 (尚缺: ${bodyMissing.join('、')})`);
+            }
+        }
+
+        if (missingFields.length > 0) {
+            alert('⚠️ 無法複製系統備註！請先完成以下必要欄位：\n\n' + missingFields.map((f, i) => `${i + 1}. ${f}`).join('\n'));
+            return;
+        }
+    }
+
+    const elem = document.getElementById(elementId);
+    let textToCopy = (elem.tagName === 'TEXTAREA' || elem.tagName === 'INPUT') ? elem.value : elem.textContent;
+
+    if (!textToCopy || textToCopy === '---') {
+        alert('無內容可複製！');
+        return;
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('複製成功！');
+        }).catch(() => fallbackCopy(textToCopy));
+    } else {
+        fallbackCopy(textToCopy);
+    }
 }
+
+function fallbackCopy(text) {
+    const tempInput = document.createElement('textarea');
+    tempInput.value = text;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    alert('複製成功！');
 }
-if (carTypes.length === 0 || products.length === 0) {
-showError("CSV 解析成功但無資料，請檢查表格內容是否正確填寫。");
-return;
-}
-initApp();
-document.getElementById('loading').style.display = 'none';
-document.getElementById('main-content').style.display = 'block';
-} catch (ex) {
-showError("資料解析時發生崩潰: " + ex.message);
-}
-});
-});
-});
-function initApp() {
-const carSelect = document.getElementById('car-type');
-carTypes.forEach(car => {
-let opt = document.createElement('option');
-opt.value = car.code;
-opt.textContent = car.code + " - " + car.name;
-carSelect.appendChild(opt);
-});
-['前檔', '車身', '天窗'].forEach(pos => {
-const idMap = { '前檔': 'f-brand', '車身': 'b-brand', '天窗': 's-brand' };
-const brandSelect = document.getElementById(idMap[pos]);
-const brands = [...new Set(products.filter(p => p.position.includes(pos) || pos.includes(p.position)).map(p => p.brand))];
-brands.forEach(b => {
-let opt = document.createElement('option');
-opt.value = b;
-opt.textContent = b;
-brandSelect.appendChild(opt);
-});
-});
-setupEventListeners();
-updateSummary();
-}
-function setupEventListeners() {
-document.getElementById('vin').addEventListener('input', function() {
-this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-document.getElementById('vin-warning').style.display = this.value.length === 17 ? 'none' : 'block';
-updateSummary();
-});
-document.getElementById('car-type').addEventListener('change', () => { checkAllCompatibility(); updateSummary(); });
-document.getElementById('car-color').addEventListener('input', updateSummary);
-document.getElementById('salesman').addEventListener('input', updateSummary);
-document.getElementById('location').addEventListener('input', updateSummary);
-document.getElementById('memo').addEventListener('input', updateSummary);
-document.querySelectorAll('.brand-select').forEach(el => {
-el.addEventListener('change', function() {
-handleBrandChange(this.dataset.pos, this.value);
-});
-});
-document.querySelectorAll('.series-select').forEach(el => {
-el.addEventListener('change', function() {
-const pos = this.dataset.pos;
-const brand = document.getElementById(pos === '前檔' ? 'f-brand' : pos === '車身' ? 'b-brand' : 's-brand').value;
-handleSeriesChange(pos, brand, this.value);
-});
-});
-document.querySelectorAll('.vlt-select, .vlt-select-multi').forEach(el => {
-el.addEventListener('change', () => { checkAllCompatibility(); updateSummary(); });
-});
-}
-function handleBrandChange(pos, brand) {
-const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
-const seriesSel = document.getElementById(prefix + "-series");
-seriesSel.innerHTML = brand ? '-- 請選擇系列 --' : '-- 請先選品牌 --';
-seriesSel.disabled = !brand;
-resetVltFields(pos);
-document.getElementById(prefix + "-partno").textContent = '---';
-document.getElementById(prefix + "-match-warning").style.display = 'none';
-if (!brand) { updateSummary(); return; }
-const seriesList = [...new Set(products.filter(p => p.brand === brand && (p.position.includes(pos) || pos.includes(p.position))).map(p => p.series))];
-seriesList.forEach(s => {
-let opt = document.createElement('option');
-opt.value = s;
-opt.textContent = s;
-seriesSel.appendChild(opt);
-});
-updateSummary();
-}
-function handleSeriesChange(pos, brand, series) {
-const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
-resetVltFields(pos, series);
-if (!series) {
-document.getElementById(prefix + "-partno").textContent = '---';
-document.getElementById(prefix + "-match-warning").style.display = 'none';
-updateSummary();
-return;
-}
-const prod = products.find(p => p.brand === brand && p.series === series && (p.position.includes(pos) || pos.includes(p.position)));
-if (prod) {
-document.getElementById(prefix + "-partno").textContent = prod.id;
-if (pos === '車身') {
-['b-vlt-front', 'b-vlt-back', 'b-vlt-rear'].forEach(id => {
-const el = document.getElementById(id);
-prod.vlt.forEach(v => {
-let opt = document.createElement('option');
-opt.value = v;
-opt.textContent = v + "%";
-el.appendChild(opt);
-});
-});
-} else {
-const el = document.getElementById(prefix + "-vlt");
-prod.vlt.forEach(v => {
-let opt = document.createElement('option');
-opt.value = v;
-opt.textContent = v + "%";
-el.appendChild(opt);
-});
-}
-}
-checkAllCompatibility();
-updateSummary();
-}
-function resetVltFields(pos, hasSeries = false) {
-const text = hasSeries ? '-- 請選擇透光度 --' : '-- 請先選系列 --';
-if (pos === '車身') {
-['b-vlt-front', 'b-vlt-back', 'b-vlt-rear'].forEach(id => {
-const el = document.getElementById(id);
-el.innerHTML = '' + text + '';
-el.disabled = !hasSeries;
-});
-} else {
-const prefix = pos === '前檔' ? 'f' : 's';
-const el = document.getElementById(prefix + "-vlt");
-el.innerHTML = '' + text + '';
-el.disabled = !hasSeries;
-}
-}
-function checkAllCompatibility() {
-const currentCar = document.getElementById('car-type').value;
-['前檔', '車身', '天窗'].forEach(pos => {
-const prefix = pos === '前檔' ? 'f' : pos === '車身' ? 'b' : 's';
-const brand = document.getElementById(prefix + "-brand").value;
-const series = document.getElementById(prefix + "-series").value;
-const warningEl = document.getElementById(prefix + "-match-warning");
-if (!brand || !series || !currentCar) {
-warningEl.style.display = 'none';
-return;
-}
-const prod = products.find(p => p.brand === brand && p.series === series && (p.position.includes(pos) || pos.includes(p.position)));
-if (prod) {
-const isMatch = prod.cars.some(c => c.includes(currentCar) || currentCar.includes(c));
-warningEl.style.display = isMatch ? 'none' : 'block';
-}
-});
-}
-function updateSummary() {
-const vin = document.getElementById('vin').value;
-const carType = document.getElementById('car-type').value;
-const carColor = document.getElementById('car-color').value;
-const salesman = document.getElementById('salesman').value;
-const location = document.getElementById('location').value;
-const memo = document.getElementById('memo').value;
-const fBrand = document.getElementById('f-brand').value;
-const fSeries = document.getElementById('f-series').value;
-const fVlt = document.getElementById('f-vlt').value;
-const fPart = document.getElementById('f-partno').innerText;
-const bBrand = document.getElementById('b-brand').value;
-const bSeries = document.getElementById('b-series').value;
-const bVltF = document.getElementById('b-vlt-front').value;
-const bVltB = document.getElementById('b-vlt-back').value;
-const bVltR = document.getElementById('b-vlt-rear').value;
-const bPart = document.getElementById('b-partno').innerText;
-const sBrand = document.getElementById('s-brand').value;
-const sSeries = document.getElementById('s-series').value;
-const sVlt = document.getElementById('s-vlt').value;
-const sPart = document.getElementById('s-partno').innerText;
-let summary = "【車身號碼】:" + vin + "\n";
-summary += "【車型規格】:" + carType + (carColor ? ' (' + carColor + ')' : '') + "\n";
-summary += "【營業人員】:" + salesman + "\n";
-summary += "【施工地點】:" + location + "\n";
-summary += "【前擋規格】:" + (fBrand && fSeries && fVlt ? (fBrand + " " + fSeries + " (透光:" + fVlt + "%) [件號:" + fPart + "]") : '未選擇') + "\n";
-let bodyText = '未選擇';
-if (bBrand && bSeries && bVltF && bVltB && bVltR) {
-bodyText = bBrand + " " + bSeries + " (前窗:" + bVltF + "% / 後窗:" + bVltB + "% / 後擋:" + bVltR + "%) [件號:" + bPart + "]";
-}
-summary += "【車身規格】:" + bodyText + "\n";
-summary += "【天窗規格】:" + (sBrand && sSeries && sVlt ? (sBrand + " " + sSeries + " (透光:" + sVlt + "%) [件號:" + sPart + "]") : '無天窗/未選') + "\n";
-summary += "【其他備註】:" + (memo ? memo : '無');
-document.getElementById('output-summary').value = summary;
-}
-function copyText(elementId, isTextArea = false) {
-const text = isTextArea ? document.getElementById(elementId).value : document.getElementById(elementId).innerText;
-if (!text || text === '---') {
-alert('沒有有效的內容可以複製！');
-return;
-}
-navigator.clipboard.writeText(text).then(() => {
-alert('已成功複製到剪貼簿！');
-}).catch(err => {
-alert('複製失敗，請手動複製。');
-});
-}
+
+updateNote();
+</script>
+
+</body>
+</html>
