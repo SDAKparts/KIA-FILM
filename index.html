@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KIA 隔熱紙下單小幫手</title>
+
+    <!-- 引入 SheetJS 解析 Excel 檔案 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         :root {
             --primary: #0056b3;
@@ -176,9 +180,22 @@
             color: #6c757d;
             margin-top: 2px;
         }
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
+
+<div id="loading" class="loading-overlay">正在讀取車型與隔熱紙資料庫...</div>
 
 <div class="container">
     <div class="header-title">
@@ -199,14 +216,6 @@
                 <label for="carModel">車型 (必選)</label>
                 <select id="carModel" onchange="onCarModelChange()">
                     <option value="">-- 請選擇車型 --</option>
-                    <option value="JA - Picanto">JA - Picanto</option>
-                    <option value="YB - Stonic">YB - Stonic</option>
-                    <option value="CD SW - Ceed Sportswagon">CD SW - Ceed Sportswagon</option>
-                    <option value="NQ5 - Sportage">NQ5 - Sportage</option>
-                    <option value="MQ4 - Sorento">MQ4 - Sorento</option>
-                    <option value="KA4 - Carnival">KA4 - Carnival</option>
-                    <option value="CV - EV6">CV - EV6</option>
-                    <option value="MV - EV9">MV - EV9</option>
                 </select>
                 <div class="car-hint">選擇車型後，下方件號規格會自動連動比對</div>
             </div>
@@ -220,7 +229,7 @@
             </div>
             <div class="form-group">
                 <label for="location">存放(施工)地點 (必填)</label>
-                <input type="text" id="location" placeholder="例如：新美中和廠" oninput="updateNote()">
+                <input type="text" id="location" placeholder="例如：南港整備中心" oninput="updateNote()">
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="otherInfo">其他 (選填，例如交車日、補充事項)</label>
@@ -381,139 +390,99 @@
 </div>
 
 <script>
-const DATABASE = [
-  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["78"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["68"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126MQ", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["78"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["68"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["78"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["68"]},
-  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KS系列", "part_no": "99PVYFSKB120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KS系列", "part_no": "99PVYFSKB122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["78"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KS系列", "part_no": "99PVYFSKB126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["20", "40"]},
-  {"brand": "FSK", "part_type": "車身", "series": "KT系列", "part_no": "99PVYFSKKT120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "KT系列", "part_no": "99PVYFSKKT122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["68"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "KT系列", "part_no": "99PVYFSKKT126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["8", "18", "38", "68"]},
-  {"brand": "FSK", "part_type": "車身", "series": "S系列", "part_no": "99PVYFSKF120CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "S系列", "part_no": "99PVYFSKF122CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "S系列", "part_no": "99PVYFSKF126CD", "raw_cars": "CD, CV, NQ5", "cars": ["CD", "CV", "NQ5"], "vlts": ["75", "50", "35", "25", "10"]},
-  {"brand": "FSK", "part_type": "車身", "series": "TB系列", "part_no": "99PVYFSKTB120CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["15", "45", "75"]},
-  {"brand": "FSK", "part_type": "前擋", "series": "TB系列", "part_no": "99PVYFSKTB122CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["75"]},
-  {"brand": "FSK", "part_type": "天窗", "series": "TB系列", "part_no": "99PVYFSKTB126CDCK", "raw_cars": "CD, CK, CV, NQ5", "cars": ["CD", "CK", "CV", "NQ5"], "vlts": ["15", "45", "75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122JAYB", "raw_cars": "JA PE, YB PE", "cars": ["JA", "PE", "YB"], "vlts": ["70", "80", "90"]},
-  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC020", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC022", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["70"]},
-  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
-  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122CD", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70", "80", "90"]},
-  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["70"]},
-  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["75"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["70", "80", "90"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126CV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["70"]},
-  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["75"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["70", "80", "90"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126MQ", "raw_cars": "MQ4, NQ5", "cars": ["MQ4", "NQ5"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "車身", "series": "P系列", "part_no": "99PVY3MXC120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "前擋", "series": "P系列", "part_no": "99PVY3MXC122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
-  {"brand": "3M", "part_type": "天窗", "series": "P系列", "part_no": "99PVY3MXC126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["18", "35", "40", "70"]},
-  {"brand": "3M", "part_type": "車身", "series": "極黑MB系列", "part_no": "99PVY3MMB120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極黑MB系列", "part_no": "99PVY3MMB122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["75"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極黑MB系列", "part_no": "99PVY3MMB126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "20", "30", "38", "45", "60", "75"]},
-  {"brand": "3M", "part_type": "車身", "series": "極透MA系列", "part_no": "99PVY3MMA120KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "3M", "part_type": "前擋", "series": "極透MA系列", "part_no": "99PVY3MMA122KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70", "80", "90"]},
-  {"brand": "3M", "part_type": "天窗", "series": "極透MA系列", "part_no": "99PVY3MMA126KA", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["20", "40", "70", "80", "90"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYMQT422", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYMQT420", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYMQT426", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYMQT222", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYMQT220", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYMQT226", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYMQT122", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYMQT120", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYMQT126", "raw_cars": "MQ4", "cars": ["MQ4"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYKAT422", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYKAT420", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYKAT426", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYKAT222", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYKAT220", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYKAT226", "raw_cars": "KA4, MV", "cars": ["KA4", "MV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYKAT122", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYKAT120", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYKAT126", "raw_cars": "KA4", "cars": ["KA4"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120CDCK", "raw_cars": "CD, CK", "cars": ["CD", "CK"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122CDCK", "raw_cars": "CD, CK", "cars": ["CD", "CK"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYCDT222", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYCDT220", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYCDT122", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYCDT120", "raw_cars": "CD SW", "cars": ["CD", "SW"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSMT1120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSMT1122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYSMT1126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Bella系列", "part_no": "99PVYSMT1126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYSMT4126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "T4系列", "part_no": "99PVYSMT4126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSMT2120EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSMT2122EVNQ", "raw_cars": "CV, NQ5", "cars": ["CV", "NQ5"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYSMT2126EV", "raw_cars": "CV", "cars": ["CV"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "天窗", "series": "Vega系列", "part_no": "99PVYSMT2126NQ", "raw_cars": "NQ5", "cars": ["NQ5"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "T4系列", "part_no": "99PVYSMT4120JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["10", "20", "35", "45", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "T4系列", "part_no": "99PVYSMT4122JAYB", "raw_cars": "JA, YB", "cars": ["JA", "YB"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSM210A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSM212A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSM010A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSM012A", "raw_cars": "JA", "cars": ["JA"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Vega系列", "part_no": "99PVYSMYB210A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["05", "15", "30", "40", "50", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Vega系列", "part_no": "99PVYSMYB212A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["70"]},
-  {"brand": "Smith", "part_type": "車身", "series": "Bella系列", "part_no": "99PVYSMYB0A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["05", "15", "30", "40", "70"]},
-  {"brand": "Smith", "part_type": "前擋", "series": "Bella系列", "part_no": "99PVYSMYB2A", "raw_cars": "YB", "cars": ["YB"], "vlts": ["70"]}
-];
-
+let DATABASE = [];
+let CAR_MODELS = [];
 const PART_TYPES_MAP = { "front": "前擋", "body": "車身", "sunroof": "天窗" };
+
+// 自動載入 Excel 檔案
+async function loadExcelData() {
+    try {
+        let response = await fetch('database.xlsx');
+        if (!response.ok) throw new Error("找不到 database.xlsx");
+
+        let arrayBuffer = await response.arrayBuffer();
+        let workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+        // 1. 解析【隔熱紙】Sheet
+        let filmSheetName = workbook.SheetNames.find(n => n.includes('隔熱紙') || n.toLowerCase().includes('film') || n.toLowerCase().includes('part')) || workbook.SheetNames[0];
+        let rawFilmJson = XLSX.utils.sheet_to_json(workbook.Sheets[filmSheetName]);
+
+        DATABASE = rawFilmJson.map(row => {
+            let brand = String(row['品牌'] || row['brand'] || '').trim();
+            
+            // 位置校正 (前檔/前擋、去除前後空格)
+            let rawPos = String(row['位置'] || row['part_type'] || '').trim();
+            let partType = (rawPos === '前檔') ? '前擋' : rawPos;
+
+            let series = String(row['系列'] || row['series'] || '').trim();
+            let partNo = String(row['件號'] || row['part_no'] || '').trim();
+            let rawCars = String(row['車型 / 規格'] || row['車型/規格'] || row['車型'] || row['raw_cars'] || row['cars'] || '').trim();
+
+            let cars = rawCars.split(/[,/]+/).map(c => c.trim()).filter(Boolean);
+
+            // 解析透光度 (相容點點或逗點分隔)
+            let rawVlts = String(row['透光度'] || row['vlts'] || '').trim();
+            let vlts = rawVlts.split(/[,\.\s]+/).map(v => v.trim()).filter(Boolean);
+
+            return {
+                brand: brand,
+                part_type: partType,
+                series: series,
+                part_no: partNo,
+                raw_cars: rawCars,
+                cars: cars,
+                vlts: vlts
+            };
+        });
+
+        // 2. 解析【車型】Sheet
+        let modelSheetName = workbook.SheetNames.find(n => n.includes('車型') || n.toLowerCase().includes('model'));
+        if (modelSheetName) {
+            parseModelsFromSheet(workbook.Sheets[modelSheetName]);
+        } else if (workbook.SheetNames.length > 1) {
+            parseModelsFromSheet(workbook.Sheets[workbook.SheetNames[1]]);
+        }
+
+        renderCarModelOptions();
+        document.getElementById('loading').style.display = 'none';
+        updateNote();
+    } catch (err) {
+        console.error("載入 Excel 失敗", err);
+        alert("載入 database.xlsx 失敗，請確認檔案已放置於 Repository 根目錄下！");
+        document.getElementById('loading').innerText = "❌ 載入失敗，請檢查檔名或網頁主機設定";
+    }
+}
+
+function parseModelsFromSheet(worksheet) {
+    let rawJson = XLSX.utils.sheet_to_json(worksheet);
+    CAR_MODELS = rawJson.map(row => {
+        let code = String(row['車型'] || row['代碼'] || row['code'] || '').trim();
+        let name = String(row['商品名'] || row['車款名稱'] || row['name'] || '').trim();
+        if (!code) return null;
+        return {
+            code: code,
+            name: name,
+            displayText: name ? `${code} - ${name}` : code
+        };
+    }).filter(Boolean);
+}
+
+function renderCarModelOptions() {
+    const carModelSelect = document.getElementById('carModel');
+    const currentValue = carModelSelect.value;
+    
+    carModelSelect.innerHTML = '<option value="">-- 請選擇車型 --</option>';
+    CAR_MODELS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.displayText;
+        opt.textContent = m.displayText;
+        carModelSelect.appendChild(opt);
+    });
+
+    if (currentValue) {
+        carModelSelect.value = currentValue;
+    }
+}
 
 function cleanSeriesName(name) {
     return name ? name.replace(/系列$/g, '') : '';
@@ -521,10 +490,13 @@ function cleanSeriesName(name) {
 
 function checkModelMatch(userCarModel, item) {
     if (!userCarModel) return true;
-    const userCode = userCarModel.split(' ')[0].toUpperCase();
+    const userCode = userCarModel.split(' - ')[0].trim().toUpperCase();
+    
     if (item.cars.some(c => c.toUpperCase() === userCode)) return true;
-    if (item.raw_cars.toUpperCase().includes(userCode)) return true;
-    if (userCode === 'CD' && item.raw_cars.toUpperCase().includes('SW')) return true;
+    
+    const rawUpper = item.raw_cars.toUpperCase();
+    if (rawUpper === userCode || rawUpper.includes(userCode)) return true;
+
     return false;
 }
 
@@ -730,7 +702,6 @@ function updateNote() {
     const location = document.getElementById('location').value;
     const otherInfo = document.getElementById('otherInfo').value;
 
-    // 前擋文字
     const frontBrand = document.getElementById('front-brand').value;
     const frontSeries = cleanSeriesName(document.getElementById('front-series').value);
     const frontVlt = document.getElementById('front-vlt').value;
@@ -739,7 +710,6 @@ function updateNote() {
         frontStr = `前擋：${frontBrand} ${frontSeries}${frontVlt ? '-' + frontVlt : ''}`;
     }
 
-    // 車身文字
     const bodyBrand = document.getElementById('body-brand').value;
     const bodySeries = cleanSeriesName(document.getElementById('body-series').value);
     const vltFront = document.getElementById('body-vlt-front').value;
@@ -765,7 +735,6 @@ function updateNote() {
         }
     }
 
-    // 天窗文字
     const sunroofBrand = document.getElementById('sunroof-brand').value;
     const sunroofSeries = cleanSeriesName(document.getElementById('sunroof-series').value);
     const sunroofVlt = document.getElementById('sunroof-vlt').value;
@@ -885,7 +854,7 @@ function fallbackCopy(text) {
     alert('複製成功！');
 }
 
-updateNote();
+window.addEventListener('DOMContentLoaded', loadExcelData);
 </script>
 
 </body>
